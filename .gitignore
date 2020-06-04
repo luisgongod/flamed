@@ -41,3 +41,4 @@ tools/get_MAC_add/.pio
 tools/get_MAC_add/.vscode
 node-sender/src/credentials.h
 node-receiver/src/credentials.h
+node-sender/.gitignore
