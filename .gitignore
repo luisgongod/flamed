@@ -30,3 +30,14 @@
 *.exe
 *.out
 *.app
+
+# user
+docs/MACs.md
+node-receiver/.pio/
+node-receiver/.vscode/
+node-sender/.pio/
+node-sender/.vscode/
+tools/get_MAC_add/.pio
+tools/get_MAC_add/.vscode
+node-sender/src/credentials.h
+node-receiver/src/credentials.h
