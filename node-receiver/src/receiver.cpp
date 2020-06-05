@@ -143,10 +143,19 @@ void loop(){
             // fill_solid(&(leds[i]), NUM_LEDS, CHSV(0, 0, 0));
             fill_solid(&(leds[i]), NUM_LEDS, CHSV(v_bg_hue,v_bg_sat,v_bg_val));
 
-			//Pixel		     
-			fill_gradient(&(leds[i]), v_0_pos,CHSV(v_0_hue,v_0_sat,v_0_sat), v_1_pos,CHSV(v_1_hue,v_1_sat,v_1_sat));            
+			//Pixel		    
+			msg.dispatch("/core/0/hue", pixel_0_hue);
+        	msg.dispatch("/core/0/sat", pixel_0_saturation);
+        	msg.dispatch("/core/0/val", pixel_0_value);
+			msg.dispatch("/core/0/pos", pixel_0_position);
+			msg.dispatch("/core/1/hue", pixel_1_hue);
+        	msg.dispatch("/core/1/sat", pixel_1_saturation);
+        	msg.dispatch("/core/1/val", pixel_1_value);
+			msg.dispatch("/core/1/pos", pixel_1_position);
 
-            Serial.printf("bg: %d\t%d\t%d\tpixel: %d\t%d\t%d\t%d \n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_0_sat,v_0_val,v_0_pos);
+			fill_gradient(&(leds[i]), v_0_pos,CHSV(v_0_hue,v_0_sat,v_0_val), v_1_pos,CHSV(v_1_hue,v_1_sat,v_1_val));            
+
+            Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);
 	        FastLED.show();
 		}
 		else
