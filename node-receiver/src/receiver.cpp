@@ -33,7 +33,8 @@ OSCErrorCode error;
 void setup(){
 
 	M5.begin();
-   	Serial.begin(115200);
+	Serial.begin(115200);
+	WiFi.config(ip,gateway,subnet);
    	WiFi.begin(ssid, pass);
 	FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
