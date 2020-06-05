@@ -31,9 +31,6 @@
 
 // CRGB leds[NUM_LEDS];
 
-// //// Pa la chamba
-// // char pass[] = "Qwic2018K@!";
-// // char ssid[] = "QWIC";
 
 // // A UDP instance to let us send and receive packets over UDP
 // WiFiUDP Udp;

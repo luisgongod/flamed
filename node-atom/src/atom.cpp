@@ -1,5 +1,10 @@
+/*
+Atom lite, working with buttons.
+MPU6886 not working
+sadly
+*/
 #include <Arduino.h>
-#include <M5StickC.h>
+// #include <M5StickC.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include <OSCMessage.h>
@@ -7,11 +12,12 @@
 #include <OSCData.h>
 #include <NintendoExtensionCtrl.h>
 #include "credentials.h"
+// #include "M5Atom.h"
 
 #define LOOPDELAY 50
 
 WiFiUDP Udp;
-IPAddress ip(192, 168, 2, 102);    
+IPAddress ip(192, 168, 2, 105);    
 IPAddress gateway(192, 168, 2, 254);    
 IPAddress subnet(255, 255, 255, 0);     
 
@@ -20,24 +26,19 @@ const unsigned int outPort = 9000;		// remote port (not needed for receive)
 const unsigned int localPort = 8000;
 OSCErrorCode error;
 
-Nunchuk nchuk;
-
-//To work with: IMU_Stick.noisette
-float pitch = 0.0F;
-float roll  = 0.0F;
-float yaw   = 0.0F;
+int red_button =0;
+int blue_button =0;
+int lite_button = 0;
 
 void setup() {
 	Serial.begin(115200);
 	delay(100);
-	Serial.println("On a Stick!");
-	
-	nchuk.begin();
-	while (!nchuk.connect()) {
-		Serial.println("Nunchuk not detected!");
-		delay(500);
-	}
+	Serial.println("Lite it up!");
 
+  //Serial,i2c,display
+  // M5.begin(true, false, false);
+  // delay(10);
+	
 	WiFi.config(ip,gateway,subnet);
 	WiFi.begin(ssid, pass);	
 	while (WiFi.status() != WL_CONNECTED){
@@ -46,87 +47,59 @@ void setup() {
 	}
 
 	Udp.begin(localPort);
-	
-	M5.begin();
-	M5.IMU.Init();
-	M5.Lcd.setRotation(3);
-	M5.Lcd.fillScreen(BLACK);
-	M5.Lcd.setTextSize(1);
-	M5.Lcd.setCursor(40, 0);
-	M5.Lcd.println("IMU TEST");
-	M5.Lcd.setCursor(0, 10);
-	M5.Lcd.setCursor(0, 50);
-	M5.Lcd.println("  Pitch   Roll    Yaw");	
+
+  pinMode(26, INPUT);
+  pinMode(32, INPUT);	
+  pinMode(39, INPUT);	
 }
 
 float temp = 0;
 void loop() {  
-//IMU
-	M5.IMU.getAhrsData(&pitch,&roll,&yaw);  
-	M5.Lcd.setCursor(0, 60);
-	M5.Lcd.printf(" %5.2f   %5.2f   %5.2f   ", pitch, roll, yaw);    
 
-//OSC_IMU
-	OSCBundle bndl;
-	bndl.add("/imu/pitch").add(pitch);
-	bndl.add("/imu/roll").add(roll);
-	bndl.add("/imu/yaw").add(yaw);
+  red_button = digitalRead(26);
+  blue_button = digitalRead(32);
+  lite_button = digitalRead(39);
+
+	OSCBundle bndl;	
+
+  // M5.Btn.wasPressed()
+  if (lite_button == 1){
+    bndl.add("/lite").add(1);	    
+  }
+  else
+  {
+    bndl.add("/lite").add(0);	
+  }
+
+  if (red_button == 1){
+    bndl.add("/red").add(1);	    
+  }
+  else
+  {
+    bndl.add("/red").add(0);	
+  }
+
+  if (red_button == 1){
+    bndl.add("/red").add(1);	    
+  }
+  else
+  {
+    bndl.add("/red").add(0);	
+  }
+  
+  if (blue_button == 1){
+    bndl.add("/blue").add(1);	    
+  }
+  else
+  {
+    bndl.add("/blue").add(0);	
+  }
+
 	Udp.beginPacket(outIp, outPort);
 	bndl.send(Udp); 
 	Udp.endPacket(); 
 	bndl.empty();  
 
-
-//Wii Nchuck
-	boolean success = nchuk.update();  // Get new data from the controller
-
-//.. to debug if there are connection issues.
-	// if (success == true) {  // We've got data!
-	// 	nchuk.printDebug();  // Print all of the values!
-	// }
-	// else {  // Data is bad :(
-	// 	Serial.println("Controller Disconnected!");
-	// 	delay(1000);
-	// 	nchuk.connect();		
-	// }
-
-	// bndl.add("/nkacc/x").add(nchuk.accelX());
-	// bndl.add("/nkacc/y").add(nchuk.accelY());
-	// bndl.add("/nkacc/z").add(nchuk.accelZ());
-	bndl.add("/nkimu/roll").add(nchuk.rollAngle());
-	bndl.add("/nkimu/pitch").add(nchuk.pitchAngle());
-	Udp.beginPacket(outIp, outPort);
-	bndl.send(Udp); 
-	Udp.endPacket(); 
-	bndl.empty();  
-
-	bndl.add("/nkjoy/x").add(nchuk.joyX());
-	bndl.add("/nkjoy/y").add(nchuk.joyY());
-	Udp.beginPacket(outIp, outPort);
-	bndl.send(Udp); 
-	Udp.endPacket(); 
-	bndl.empty();  	
-
-	boolean zButton = nchuk.buttonZ();
-	boolean cButton = nchuk.buttonC();
-	
-	if (zButton == true) {
-		bndl.add("/nkbtt/z").add(1);	
-	}
-	else{
-		bndl.add("/nkbtt/z").add(0);	
-	}
-
-	if (cButton == true) {
-		bndl.add("/nkbtt/c").add(1);	
-	}
-	else{
-		bndl.add("/nkbtt/c").add(0);	
-	}
-	Udp.beginPacket(outIp, outPort);
-	bndl.send(Udp); 
-	Udp.endPacket(); 
-	bndl.empty();  
 
 
 	delay(LOOPDELAY);
