@@ -1,69 +1,38 @@
+//Simple Sketch to put device into the network to find MAC/IP and so
+#include <SPI.h>
 #include <WiFi.h>
+#include "credentials.h"
 
-IPAddress ip(192, 168, 2, 104);    
-IPAddress gateway(192, 168, 2, 254);    
-IPAddress subnet(255, 255, 255, 0);       
+byte mac[6]; // the MAC address of your Wifi shield
 
-char ssid[] = "batcave";    // your network SSID (name)
-char pass[] = "iambatman!"; // your network password (use for WPA, or use as key for WEP)
+void setup(){
+	Serial.begin(115200);
 
-int status = WL_IDLE_STATUS;
-
-void setup()
-{  
-  // Initialize serial and wait for port to open:
-  Serial.begin(115200);
-delay(500);
-    Serial.println("Serial ok");
-
-  
-  WiFi.config(ip,gateway,subnet);
-  WiFi.begin(ssid, pass);
-  
+	WiFi.begin(ssid,pass);
 	while (WiFi.status() != WL_CONNECTED){
 		delay(500);
 		Serial.print(".");
 	}
-  
+	// if you are connected, print your MAC address:
+		Serial.print("IP Address: ");
+	  	Serial.println(WiFi.localIP());
+	
+	// MAC might be flip, confirm with the router or command:
+	// sudo nmap -sP 192.168.2.0/24 | awk '/Nmap scan report for/{printf $5;}/MAC Address:/{print " => "$3;}' | sort
+		WiFi.macAddress(mac);
+		Serial.print("MAC: ");
+		Serial.print(mac[5], HEX);
+		Serial.print(":");
+		Serial.print(mac[4], HEX);
+		Serial.print(":");
+		Serial.print(mac[3], HEX);
+		Serial.print(":");
+		Serial.print(mac[2], HEX);
+		Serial.print(":");
+		Serial.print(mac[1], HEX);
+		Serial.print(":");
+		Serial.println(mac[0], HEX);
+	
 }
 
-void loop () {
-   Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
-  delay(1000);
-}
-
-// #include <WiFi.h>
-// int status = WL_IDLE_STATUS;     // the Wifi radio's status
-
-// //SSID of your network
-// char ssid[] = "batcave";
-// //password of your WPA Network
-// char pass[] = "imbatman!";
-
-// IPAddress ip;
-// IPAddress subnet;
-// IPAddress gateway;
-
-// void setup()
-// {
-//   WiFi.begin(ssid, pass);
-
-//   if ( status != WL_CONNECTED) {
-//     Serial.println("Couldn't get a wifi connection");
-//     while(true);
-//   }
-//   // if you are connected, print out info about the connection:
-//   else {
-
-//     // print your subnet mask:
-//     subnet = WiFi.subnetMask();
-//     Serial.print("NETMASK: ");
-//     Serial.println(subnet);
-
-//   }
-// }
-
-// void loop () {
-// }
- 
+void loop() {}
