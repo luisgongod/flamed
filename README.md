@@ -9,9 +9,8 @@ Using Arduino framework ( so usign [Fastled](https://github.com/FastLED/FastLED)
 
 ## Roadmap
 
-- adding wii nunchakus to sender-node
-- adding buttons to sender-node
-- prepare  "adjuster" in Chataigne and OSCTouch
+- Refactor all to Int values (forget about mapping)
+- Use Devkit one as receiver. (reliability)
 
 
 ## Ideas
