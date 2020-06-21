@@ -1,3 +1,9 @@
+/*
+To be used with M5Stick with or without the Wiimote.
+Use Chataigne file: IMU_Stick.noisette
+
+M5 Stick resolution: 80x160
+*/
 #include <Arduino.h>
 #include <M5StickC.h>
 #include <WiFi.h>
@@ -22,49 +28,64 @@ OSCErrorCode error;
 
 Nunchuk nchuk;
 
-//To work with: IMU_Stick.noisette
 float pitch = 0.0F;
 float roll  = 0.0F;
 float yaw   = 0.0F;
+
+bool nk_connected = false;
 
 void setup() {
 	Serial.begin(115200);
 	delay(100);
 	Serial.println("On a Stick!");
+
+	M5.begin();
+	M5.IMU.Init();
+	M5.Lcd.setRotation(1);
+	M5.Lcd.fillScreen(BLACK);
+	M5.Lcd.setTextSize(2);
+	M5.Lcd.setCursor(0, 0);
+	M5.Lcd.println("Stick!");
+
+	// M5.Lcd.setCursor(0, 10);
+	// M5.Lcd.setCursor(0, 50);
+	// M5.Lcd.println("  Pitch   Roll    Yaw");	
 	
 	nchuk.begin();
-	while (!nchuk.connect()) {
-		Serial.println("Nunchuk not detected!");
-		delay(500);
+	M5.Lcd.print("NChuck");
+	for (int i = 0; i < 3; i++)	{
+		if (!nchuk.connect() ){
+		Serial.println("Connecting to Nunchuk");
+		M5.Lcd.print(".");
+		delay(400);
+		}
+		else{
+			M5.Lcd.println(". OK!");
+			nk_connected = true;
+			break;				
+		}		
+	}
+	if (nk_connected==false){
+		M5.Lcd.println("off");
 	}
 
 	WiFi.config(ip,gateway,subnet);
 	WiFi.begin(ssid, pass);	
+	M5.Lcd.print("wifi.");
 	while (WiFi.status() != WL_CONNECTED){
-		delay(500);
+		delay(400);
 		Serial.print(".");
 	}
+	M5.Lcd.println(". OK!");
 
 	Udp.begin(localPort);
-	
-	M5.begin();
-	M5.IMU.Init();
-	M5.Lcd.setRotation(3);
-	M5.Lcd.fillScreen(BLACK);
-	M5.Lcd.setTextSize(1);
-	M5.Lcd.setCursor(40, 0);
-	M5.Lcd.println("IMU TEST");
-	M5.Lcd.setCursor(0, 10);
-	M5.Lcd.setCursor(0, 50);
-	M5.Lcd.println("  Pitch   Roll    Yaw");	
 }
 
-float temp = 0;
 void loop() {  
 //IMU
 	M5.IMU.getAhrsData(&pitch,&roll,&yaw);  
-	M5.Lcd.setCursor(0, 60);
-	M5.Lcd.printf(" %5.2f   %5.2f   %5.2f   ", pitch, roll, yaw);    
+	// M5.Lcd.setCursor(0, 60);
+	// M5.Lcd.printf(" %5.2f   %5.2f   %5.2f   ", pitch, roll, yaw);    
 
 //OSC_IMU
 	OSCBundle bndl;
@@ -76,58 +97,87 @@ void loop() {
 	Udp.endPacket(); 
 	bndl.empty();  
 
+	Serial.printf("p=%5.2f r=%5.2f y=%5.2f\n", pitch, roll, yaw);
+
 
 //Wii Nchuck
-	boolean success = nchuk.update();  // Get new data from the controller
+	if(nk_connected == true){
+		boolean success = nchuk.update();  // Get new data from the controller
 
-//.. to debug if there are connection issues.
-	// if (success == true) {  // We've got data!
-	// 	nchuk.printDebug();  // Print all of the values!
-	// }
-	// else {  // Data is bad :(
-	// 	Serial.println("Controller Disconnected!");
-	// 	delay(1000);
-	// 	nchuk.connect();		
-	// }
+		if (success == true) {
+		/*Sending IMU*/
+		bndl.add("/nkacc/x").add(nchuk.accelX());
+		bndl.add("/nkacc/y").add(nchuk.accelY());
+		bndl.add("/nkacc/z").add(nchuk.accelZ());
+		bndl.add("/nkimu/roll").add(nchuk.rollAngle());
+		bndl.add("/nkimu/pitch").add(nchuk.pitchAngle());
+		Udp.beginPacket(outIp, outPort);
+		bndl.send(Udp); 
+		Udp.endPacket(); 
+		bndl.empty();  
 
-	// bndl.add("/nkacc/x").add(nchuk.accelX());
-	// bndl.add("/nkacc/y").add(nchuk.accelY());
-	// bndl.add("/nkacc/z").add(nchuk.accelZ());
-	bndl.add("/nkimu/roll").add(nchuk.rollAngle());
-	bndl.add("/nkimu/pitch").add(nchuk.pitchAngle());
-	Udp.beginPacket(outIp, outPort);
-	bndl.send(Udp); 
-	Udp.endPacket(); 
-	bndl.empty();  
+		/*Sending Joystick*/
+		bndl.add("/nkjoy/x").add(nchuk.joyX());
+		bndl.add("/nkjoy/y").add(nchuk.joyY());
+		Udp.beginPacket(outIp, outPort);
+		bndl.send(Udp); 
+		Udp.endPacket(); 
+		bndl.empty();  	
 
-	bndl.add("/nkjoy/x").add(nchuk.joyX());
-	bndl.add("/nkjoy/y").add(nchuk.joyY());
-	Udp.beginPacket(outIp, outPort);
-	bndl.send(Udp); 
-	Udp.endPacket(); 
-	bndl.empty();  	
+		/*Sending Buttons*/
+		boolean zButton = nchuk.buttonZ();
+		boolean cButton = nchuk.buttonC();
+		
+		if (zButton == true) {
+			bndl.add("/nkbtt/z").add(1);	
+		}
+		else{
+			bndl.add("/nkbtt/z").add(0);	
+		}
 
-	boolean zButton = nchuk.buttonZ();
-	boolean cButton = nchuk.buttonC();
-	
-	if (zButton == true) {
-		bndl.add("/nkbtt/z").add(1);	
+		if (cButton == true) {
+			bndl.add("/nkbtt/c").add(1);	
+		}
+		else{
+			bndl.add("/nkbtt/c").add(0);	
+		}
+		Udp.beginPacket(outIp, outPort);
+		bndl.send(Udp); 
+		Udp.endPacket(); 
+		bndl.empty();  			
+		}
+
+		// Serial.printf("p=%5.2f r=%5.2f y=%5.2f\n", pitch, roll, yaw);
+
+		else {  // Data is bad :(		
+			M5.Lcd.setCursor(0, 0);
+			M5.Lcd.println("                         ");
+			M5.Lcd.println("                         ");
+			M5.Lcd.println("                         ");
+			M5.Lcd.println("                         ");
+			M5.Lcd.setCursor(0, 0);
+			M5.Lcd.print("NChuck \ndisconnected!");
+
+			Serial.println("\nController Disconnected!");
+
+			while(1){
+				if (!nchuk.connect() ){		
+				M5.Lcd.print(".");
+				delay(600);
+				}
+				else{
+					M5.Lcd.println("\nOK!");			
+					M5.Lcd.setCursor(0, 0);
+					M5.Lcd.println("                         ");
+					M5.Lcd.println("                         ");
+				
+					break;				
+				}
+			}
+			
+		}
 	}
-	else{
-		bndl.add("/nkbtt/z").add(0);	
-	}
-
-	if (cButton == true) {
-		bndl.add("/nkbtt/c").add(1);	
-	}
-	else{
-		bndl.add("/nkbtt/c").add(0);	
-	}
-	Udp.beginPacket(outIp, outPort);
-	bndl.send(Udp); 
-	Udp.endPacket(); 
-	bndl.empty();  
-
 
 	delay(LOOPDELAY);
+	Serial.println("");
 }
