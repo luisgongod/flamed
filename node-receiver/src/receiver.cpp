@@ -18,32 +18,26 @@
 #define MIN_VAL 0
 #define MAX_HUE 255
 #define MAX_SAT 255
-#define MAX_VAL 255// to keep under 1.5A
-// #define MAX_VAL 255// full power!
+#define MAX_VAL 255
 #define FRAMES_PER_SECOND 60
-
-bool gReverseDirection = false;
-
-
-// the IP address for the shield:
-IPAddress ip(192, 168, 2, 105);    //atom
-IPAddress gateway(192, 168, 2, 254);    
-IPAddress subnet(255, 255, 255, 0);      
-
 #define LED_PIN 26
 #define NUM_LEDS 60
 #define LED_TYPE WS2812B //Very important to have the right LED Chip name
 #define COLOR_ORDER GRB
 
+bool gReverseDirection = false;
+
+IPAddress ip(192, 168, 2, 105);    //atom
+IPAddress gateway(192, 168, 2, 254);    
+IPAddress subnet(255, 255, 255, 0);      
+
 CRGB leds[NUM_LEDS];
 
-// A UDP instance to let us send and receive packets over UDP
 WiFiUDP Udp;
 const IPAddress outIp(192,168,2,73); // K7
 const unsigned int outPort = 9000;	//Send port
 const unsigned int localPort = 8888;	//Receive port
 
-//Global Global vars
 OSCErrorCode error;
 
 uint8_t v_bg_hue = 0;
@@ -68,14 +62,12 @@ uint8_t v_fire_nleds = NUM_LEDS;
 uint8_t mode = 1; //manual
 
 void setup(){
-
    	Serial.begin(115200);   
 
     WiFi.config(ip,gateway,subnet);
    	WiFi.begin(ssid, pass);
   	FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-	// FastLED.addLeds<LED_TYPE, LED_PIN>(leds, NUM_LEDS);
-
+	
 	while (WiFi.status() != WL_CONNECTED){
 		delay(500);
 		Serial.print(".");
@@ -90,8 +82,7 @@ void setup(){
 	Serial.println("Starting UDP");
 	Serial.print("Local port: ");
     Serial.print(localPort);
-    Serial.println("");
-   
+    Serial.println("");   
 }
 
 //Background Functions
@@ -118,7 +109,6 @@ void pixel_0_value(OSCMessage &msg){
 void pixel_0_position(OSCMessage &msg){
 	v_0_pos = map(msg.getFloat(0)*100, 0, 100, 0, NUM_LEDS);
 }
-
 void pixel_1_hue(OSCMessage &msg){
 	v_1_hue = map(msg.getFloat(0)*100, 0, 100, MIN_HUE, MAX_HUE);
 }
@@ -132,7 +122,7 @@ void pixel_1_position(OSCMessage &msg){
 	v_1_pos = map(msg.getFloat(0)*100, 0, 100, 0, NUM_LEDS);
 }
 
-
+//Fire funtions
 void fire_value(OSCMessage &msg){
 	v_fire_value = msg.getInt(0);
 }
@@ -150,6 +140,7 @@ void mode_mode(OSCMessage &msg){
 	mode = msg.getInt(0); 	
 }
 
+//Modes
 void Fire2012(){
 	FastLED.setBrightness( v_fire_value );
 	
@@ -194,6 +185,7 @@ void core(){
 	Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);			
 }
 
+//Consumers
 void core_consumer(OSCMessage &msg, int addressOffset){
 			//Background
 			msg.dispatch("/core/bg/hue", bg_hue);
@@ -244,10 +236,10 @@ void loop(){
 
 	switch (mode)
 	{
-	case 0:
+	case 1:
 		core();
 		break;
-	case 1:
+	case 2:
 		Fire2012();
 		break;
 	default:
@@ -256,5 +248,4 @@ void loop(){
 
 	FastLED.show();
 	FastLED.delay(1000 / FRAMES_PER_SECOND);
-
 }
