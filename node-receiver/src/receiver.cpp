@@ -122,7 +122,22 @@ void pixel_1_position(OSCMessage &msg){
 }
 
 
-/**************************LOOP***********************************/
+void fire_value(OSCMessage &msg){
+	v_fire_value = msg.getInt(0);
+}
+void fire_cooling(OSCMessage &msg){
+	v_fire_cooling = msg.getInt(0);
+}
+void fire_sparks(OSCMessage &msg){
+	v_fire_sparks = msg.getInt(0);
+}
+void fire_nleds(OSCMessage &msg){
+	v_fire_nleds = msg.getInt(0);
+}
+
+void mode_mode(OSCMessage &msg){
+	mode = msg.getInt(0); 	
+}
 
 void loop(){
 	OSCMessage msg;
