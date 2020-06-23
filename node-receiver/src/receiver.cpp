@@ -12,14 +12,18 @@
 #include <OSCData.h>
 #include <FastLED.h>
 #include "credentials.h"
-
+	
 #define MIN_HUE 0
 #define MIN_SAT 0
 #define MIN_VAL 0
 #define MAX_HUE 255
 #define MAX_SAT 255
-#define MAX_VAL 125// to keep under 1.5A
+#define MAX_VAL 255// to keep under 1.5A
 // #define MAX_VAL 255// full power!
+#define FRAMES_PER_SECOND 60
+
+bool gReverseDirection = false;
+
 
 // the IP address for the shield:
 IPAddress ip(192, 168, 2, 105);    //atom
@@ -56,14 +60,21 @@ uint8_t v_1_sat = 0;
 uint8_t v_1_val = 0;
 uint8_t v_1_pos = 0;
 
+uint8_t v_fire_value = 180;
+uint8_t v_fire_cooling = 50;
+uint8_t v_fire_sparks = 120;
+uint8_t v_fire_nleds = NUM_LEDS;
+
+uint8_t mode = 1; //manual
+
 void setup(){
 
    	Serial.begin(115200);   
 
     WiFi.config(ip,gateway,subnet);
    	WiFi.begin(ssid, pass);
-  	// FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-	FastLED.addLeds<LED_TYPE, LED_PIN>(leds, NUM_LEDS);
+  	FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+	// FastLED.addLeds<LED_TYPE, LED_PIN>(leds, NUM_LEDS);
 
 	while (WiFi.status() != WL_CONNECTED){
 		delay(500);
@@ -174,22 +185,21 @@ void Fire2012(){
     }
 }
 
+void core(){
+	// int i;
+	// fill_solid(&(leds[i]), NUM_LEDS, CHSV(0, 0, 0));
+	fill_solid(leds, NUM_LEDS, CHSV(v_bg_hue,v_bg_sat,v_bg_val));
+	fill_gradient(leds, v_0_pos,CHSV(v_0_hue,v_0_sat,v_0_val), v_1_pos,CHSV(v_1_hue,v_1_sat,v_1_val));            
 
-	if (size > 0)	{
-		while (size--)		{
-			msg.fill(Udp.read());
-		}
-		if (!msg.hasError()){			
+	Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);			
+}
 
+void core_consumer(OSCMessage &msg, int addressOffset){
 			//Background
 			msg.dispatch("/core/bg/hue", bg_hue);
         	msg.dispatch("/core/bg/sat", bg_saturation);
         	msg.dispatch("/core/bg/val", bg_value);
 			           
-            int i;
-            // fill_solid(&(leds[i]), NUM_LEDS, CHSV(0, 0, 0));
-            fill_solid(&(leds[i]), NUM_LEDS, CHSV(v_bg_hue,v_bg_sat,v_bg_val));
-
 			//Pixel		    
 			msg.dispatch("/core/0/hue", pixel_0_hue);
         	msg.dispatch("/core/0/sat", pixel_0_saturation);
@@ -199,6 +209,8 @@ void Fire2012(){
         	msg.dispatch("/core/1/sat", pixel_1_saturation);
         	msg.dispatch("/core/1/val", pixel_1_value);
 			msg.dispatch("/core/1/pos", pixel_1_position);
+}
+
 
 void fire_consumer(OSCMessage &msg, int addressOffset){			
 			msg.dispatch("/fire/val", fire_value);
@@ -207,8 +219,20 @@ void fire_consumer(OSCMessage &msg, int addressOffset){
         	msg.dispatch("/fire/nleds", fire_nleds);
 }
 
-            Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);
-	        FastLED.show();
+/**************************LOOP***********************************/
+
+void loop(){
+	OSCMessage msg;
+	int size = Udp.parsePacket();
+
+	if (size > 0)	{
+		while (size--)		{
+			msg.fill(Udp.read());			
+		}
+		if (!msg.hasError()){	
+			msg.route("/core", core_consumer);	
+			msg.route("/fire", fire_consumer);	
+			msg.dispatch("/mode", mode_mode);
 		}
 		else
 		{
@@ -217,5 +241,20 @@ void fire_consumer(OSCMessage &msg, int addressOffset){
 			Serial.println(error);
 		}
 	}
+
+	switch (mode)
+	{
+	case 0:
+		core();
+		break;
+	case 1:
+		Fire2012();
+		break;
+	default:
+		break;
+	}	
+
+	FastLED.show();
+	FastLED.delay(1000 / FRAMES_PER_SECOND);
 
 }
