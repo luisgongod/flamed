@@ -153,7 +153,12 @@ void loop(){
         	msg.dispatch("/core/1/val", pixel_1_value);
 			msg.dispatch("/core/1/pos", pixel_1_position);
 
-			fill_gradient(&(leds[i]), v_0_pos,CHSV(v_0_hue,v_0_sat,v_0_val), v_1_pos,CHSV(v_1_hue,v_1_sat,v_1_val));            
+void fire_consumer(OSCMessage &msg, int addressOffset){			
+			msg.dispatch("/fire/val", fire_value);
+        	msg.dispatch("/fire/cool", fire_cooling);
+			msg.dispatch("/fire/sparks", fire_sparks);
+        	msg.dispatch("/fire/nleds", fire_nleds);
+}
 
             Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);
 	        FastLED.show();
