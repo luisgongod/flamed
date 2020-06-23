@@ -87,13 +87,19 @@ void setup(){
 
 //Background Functions
 void bg_hue(OSCMessage &msg){
-	v_bg_hue = map(msg.getFloat(0)*100, 0, 100, MIN_HUE, MAX_HUE);
+	if(msg.getInt(0) != -1){
+		v_bg_hue = msg.getInt(0);	
+	}
 }
 void bg_saturation(OSCMessage &msg){
-	v_bg_sat = map(msg.getFloat(0)*100, 0, 100, MIN_SAT, MAX_SAT);
+	if(msg.getInt(0) != -1){
+		v_bg_sat = msg.getInt(0);
+	}
 }
 void bg_value(OSCMessage &msg){
-	v_bg_val = map(msg.getFloat(0)*100, 0, 100, MIN_VAL, MAX_VAL);
+	if(msg.getInt(0) != -1){
+		v_bg_val = msg.getInt(0);
+	}
 }
 
 //Pixel Functions
@@ -124,20 +130,30 @@ void pixel_1_position(OSCMessage &msg){
 
 //Fire funtions
 void fire_value(OSCMessage &msg){
-	v_fire_value = msg.getInt(0);
+	if(msg.getInt(0) != -1){
+		v_fire_value = msg.getInt(0);
+	}
 }
 void fire_cooling(OSCMessage &msg){
-	v_fire_cooling = msg.getInt(0);
+	if(msg.getInt(0) != -1){
+		v_fire_cooling = msg.getInt(0);
+	}
 }
 void fire_sparks(OSCMessage &msg){
-	v_fire_sparks = msg.getInt(0);
+	if(msg.getInt(0) != -1){
+		v_fire_sparks = msg.getInt(0);
+	}
 }
 void fire_nleds(OSCMessage &msg){
-	v_fire_nleds = msg.getInt(0);
+	if(msg.getInt(0) != -1){
+		v_fire_nleds = msg.getInt(0);
+	}
 }
 
 void mode_mode(OSCMessage &msg){
-	mode = msg.getInt(0); 	
+	if(msg.getInt(0) != -1){
+		mode = msg.getInt(0); 	
+	}
 }
 
 //Modes
@@ -182,7 +198,7 @@ void core(){
 	fill_solid(leds, NUM_LEDS, CHSV(v_bg_hue,v_bg_sat,v_bg_val));
 	fill_gradient(leds, v_0_pos,CHSV(v_0_hue,v_0_sat,v_0_val), v_1_pos,CHSV(v_1_hue,v_1_sat,v_1_val));            
 
-	Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);			
+	// Serial.printf("bg:%d %d %d pixel: %d:%d  %d:%d  %d:%d  %d:%d\n",v_bg_hue,v_bg_sat,v_bg_val,v_0_hue,v_1_hue,v_0_sat,v_1_sat,v_0_val,v_1_val,v_0_pos,v_1_pos);			
 }
 
 //Consumers
